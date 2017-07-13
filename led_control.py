@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import argparse
 import sys
@@ -51,13 +51,12 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--daemon', help='Start LED Control Daemon.', nargs='?', const=True)
     parser.add_argument('--color', metavar='RGB', nargs=3, type=int)
     parser.add_argument('--color2', metavar='RGB', nargs=3, type=int)
     parser.add_argument('--animation', choices=ANIMATIONS.keys())
     parser.add_argument('--wait-ms', type=int, nargs=1)
     parser.add_argument('--interval', type=int, nargs=1)
-
-    parser.add_argument('--daemon', help='Start LED Control Daemon.', nargs='?', const=True)
 
     args = parser.parse_args()
 
@@ -78,7 +77,6 @@ if __name__ == '__main__':
         animation(strip, color, iterations=args.interval)
     except Exception as e:
         print(e)
-        print(dir(e))
         er = sys.exc_info()[0]
         write_to_page( "<p>Error: %s</p>" % er )
     finally:
