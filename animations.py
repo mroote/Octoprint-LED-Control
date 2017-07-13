@@ -1,13 +1,17 @@
-def color_wipe(strip, color, wait_ms=50, *args, **kwargs):
-    time.sleep(6)
+import time
+from neopixel import Color
+
+OFF = Color(0, 0, 0)
+WHITE = Color(255, 255, 255)
+
+def color_wipe(strip, color=WHITE, wait_ms=51, *args, **kwargs):
     for i in range(strip.numPixels()):
         strip.setPixelColor(i, color)
         time.sleep(wait_ms/1000.0)
         strip.show()
-    [strip.setPixelColor(i, color) for i in range(strip.numPixels())]
     strip.show()
 
-def theaterchase(strip, color, wait_ms=50, iterations=10, *args, **kwargs):
+def theaterchase(strip, color=WHITE, wait_ms=50, iterations=10, *args, **kwargs):
     """Movie theater light style chaser animation."""
     for j in range(iterations):
         for q in range(3):
@@ -18,9 +22,7 @@ def theaterchase(strip, color, wait_ms=50, iterations=10, *args, **kwargs):
                 for i in range(0, strip.numPixels(), 3):
                     strip.setPixelColor(i+q, 0)
 
-def bounce(strip, color, wait_ms=50, iterations=10, *args, **kwargs):
-    if not args.color2:
-        color2 = Color(0, 0, 0)
+def bounce(strip, color=WHITE, color2=OFF, wait_ms=50, iterations=10, *args, **kwargs):
     n = strip.numPixels()
 
     for i in range(4 * n):
@@ -75,7 +77,6 @@ def theater_chase_rainbow(strip, wait_ms=50, *args, **kwargs):
 ANIMATIONS = {'theater_chase_rainbow': theater_chase_rainbow,
               'rainbow_cycle': rainbow_cycle,
               'rainbow': rainbow,
-              'wheel': wheel,
               'theaterchase': theaterchase,
               'color_wipe': color_wipe,
               'bounce': bounce}

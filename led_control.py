@@ -5,8 +5,10 @@ import sys
 import time
 import os
 import signal
+import traceback
+
 import paho.mqtt.client as mqtt
-from neopixel import *
+import neopixel
 
 from animations import *
 
@@ -19,12 +21,12 @@ LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
 LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
 
 def init_strip():
-    return Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+    return neopixel.Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 
 class LEDControl():
-    def __init__(self, mqtt_host='127.0.0.1', mqtt_port='1883' mqtt_user='',
+    def __init__(self, strip, mqtt_host='127.0.0.1', mqtt_port='1883', mqtt_user='',
                  mqtt_pass=''):
-        self.strip = self.init_ledstrip()
+        self.strip = strip
         self.mqtt_client = mqtt.Client()
 
         self.mqtt_host = mqtt_host
@@ -32,12 +34,7 @@ class LEDControl():
         self.mqtt_user = mqtt_user
         self.mqtt_pass = mqtt_pass
 
-    def init_ledstrip(self):
-        self.strip = init_strip()
-        # Intialize the library (must be called once before other functions).
-        self.strip.begin()
-
-    def init_mqtt(self):
+    def init_msg_client(self):
         self.mqtt_client.username_pw_set(self.mqtt_user, password=self.mqtt_pass)
         self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
@@ -51,20 +48,38 @@ class LEDControl():
 
         client.subscribe('octoprint/#')
 
+        ANIMATIONS['color_wipe'](self.strip)
+
     def on_message(self, client, userdata, msg):
+        message_events = {
+            'ClientOpened': ANIMATIONS['color_wipe'](self.strip, color=Color(0,64,255), wait_ms=4)
+        }
+        print(dir(client))
+        print(userdata)
         print(dir(msg))
-        print('{0}: {1}'.format(msg.topic, msg.payload))
+       # if 'ClientOpened' in msg.topic:
+       #     message_events['ClientOpened']()
 
-def single_run(animation, *args, **kwargs):
-    print(args, kwargs)
+def single_run(strip, animation, *args, **kwargs):
+    def parse_arg(arg, value):
+        # remove invalid arguments
+        # TODO Make argument subparser to avoid having this
+        if not value:
+            return False
+        if arg == 'host' or arg == 'port' or arg == 'animation':
+            return False
+        return True
 
-    strip = init_strip()
-    animation = ANIMATIONS[args.animation]
+    def check_value(arg, value):
+        if 'color' in arg and 'wipe' not in arg:
+            # convert color RGB values to 24 bit number
+            return neopixel.Color(value[0], value[1], value[2])
+        return value
+
+    animation_args = {k: check_value(k, v) for (k, v) in vars(args[0]).items() if parse_arg(k, v)}
 
     try:
-        color = Color(args.color[0], args.color[1], args.color[2])
-        #color2 = Color(args.color2[0], args.color2[1], args.color2[2])
-        animation(strip, color, iterations=args.interval)
+        ANIMATIONS[animation](strip, **animation_args)
     except Exception as e:
         print(e)
     finally:
@@ -72,33 +87,46 @@ def single_run(animation, *args, **kwargs):
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--daemon', help='Start LED Control Daemon.', nargs='?', const=True)
+    parser.add_argument('--host', help='Hostname or IP Address for MQTT broker.', type=str, default='127.0.0.1')
+    parser.add_argument('--port', help='Port for MQTT broker.', default='1883')
+    parser.add_argument('--user', help='User for MQTT broker.', default="")
+    parser.add_argument('-p', '--password', help='Password for MQTT broker.', default="")
+
+    parser.add_argument('--animation', help='Run a single animation and exit.', choices=ANIMATIONS.keys())
     parser.add_argument('--color', metavar='RGB', nargs=3, type=int)
     parser.add_argument('--color2', metavar='RGB', nargs=3, type=int)
-    parser.add_argument('--animation', choices=ANIMATIONS.keys())
     parser.add_argument('--wait-ms', type=int, nargs=1)
     parser.add_argument('--interval', type=int, nargs=1)
 
     args = parser.parse_args()
 
+    strip = init_strip()
+    strip.begin()
+
     if args.daemon:
         try:
-            ledcontrol = LEDControl()
-            ledcontrol.init_mqtt()
+            ledcontrol = LEDControl(strip,
+                                    mqtt_host=args.host,
+                                    mqtt_port=args.port,
+                                    mqtt_user=args.user,
+                                    mqtt_pass=args.password)
+            ledcontrol.init_msg_client()
         except Exception as e:
             print(e)
         finally:
             sys.exit(0)
 
-    os.setpgrp() # create new process group, become its leader
-    try:
-        single_run(args.animation, args)
-    except Exception as e:
-        print(e)
-        er = sys.exc_info()[0]
-        write_to_page( "<p>Error: %s</p>" % er )
-    finally:
-        sys.exit(0)
+    if args.animation:
+        os.setpgrp() # create new process group, become its leader
+        try:
+            single_run(strip, args.animation, args)
+        except Exception as e:
+            print(e)
+            traceback.print_tb(err.__traceback__)
+            er = sys.exc_info()[0]
+            write_to_page( "<p>Error: %s</p>" % er )
+        finally:
+            sys.exit(0)
