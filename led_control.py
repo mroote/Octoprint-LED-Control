@@ -6,6 +6,7 @@ import time
 import os
 import signal
 import traceback
+import logging
 
 import paho.mqtt.client as mqtt
 import neopixel
@@ -28,7 +29,6 @@ class LEDControl():
                  mqtt_pass=''):
         self.strip = strip
         self.mqtt_client = mqtt.Client()
-
         self.mqtt_host = mqtt_host
         self.mqtt_port = mqtt_port
         self.mqtt_user = mqtt_user
@@ -51,14 +51,24 @@ class LEDControl():
         ANIMATIONS['color_wipe'](self.strip)
 
     def on_message(self, client, userdata, msg):
-        message_events = {
-            'ClientOpened': ANIMATIONS['color_wipe'](self.strip, color=Color(0,64,255), wait_ms=4)
-        }
-        print(dir(client))
-        print(userdata)
-        print(dir(msg))
-       # if 'ClientOpened' in msg.topic:
-       #     message_events['ClientOpened']()
+        refresh = False
+        try:
+            if 'ClientOpened' in msg.topic:
+                ANIMATIONS['color_wipe'](self.strip, color=Color(0,64,255), wait_ms=10)
+            if 'Startup' in msg.topic:
+                ANIMATIONS['rainbow_cycle'](self.strip)
+            if 'Connected' in msg.topic:
+                ANIMATIONS['color_wipe'](self.strip, color=Color(0,255,64), wait_ms=10)
+            if 'Upload' in msg.topic or 'FileAdded' in msg.topic:
+                ANIMATIONS['color_wipe'](self.strip, color=Color(0,255,10), wait_ms=10)
+            if 'PrintStarted' in msg.topic:
+                ANIMATIONS['bounce'](self.strip, color=Color(0,32,255), iterations=2)
+            if 'PrintFailed' in msg.topic:
+                ANIMATIONS['bounce'](self.strip, color=Color(255,32,32), iterations=5)
+            if 'PrintDone' in msg.topic:
+                ANIMATIONS['rainbow_cycle']()
+        finally:
+            ANIMATIONS['color_wipe'](self.strip)
 
 def single_run(strip, animation, *args, **kwargs):
     def parse_arg(arg, value):
@@ -129,4 +139,7 @@ if __name__ == '__main__':
             er = sys.exc_info()[0]
             write_to_page( "<p>Error: %s</p>" % er )
         finally:
-            sys.exit(0)
+            # Ask nicely to stop then take the hammer out to prevent zombies
+            os.killpg(0, signal.SIGTERM)
+            time.sleep(1)
+            os.killpg(0, signal.SIGKILL)
