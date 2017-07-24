@@ -13,6 +13,9 @@ import neopixel
 
 from animations import *
 
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logger = logging.getLogger()
+
 # LED strip configuration:
 LED_COUNT      = 47      # Number of LED pixels.
 LED_PIN        = 18      # GPIO pin connected to the pixels (must support PWM!).
@@ -52,23 +55,39 @@ class LEDControl():
 
     def on_message(self, client, userdata, msg):
         refresh = False
+        logger.info('Received: {0}'.format(msg.topic))
         try:
+            if 'PowerOn' in msg.topic:
+                ANIMATIONS['color_wipe'](self.strip, wait_ms=150)
+                refresh = True
+            if 'PowerOff' in msg.topic:
+                ANIMATIONS['color_wipe'](self.strip, color=Color(0,0,0), wait_ms=10)
             if 'ClientOpened' in msg.topic:
                 ANIMATIONS['color_wipe'](self.strip, color=Color(0,64,255), wait_ms=10)
+                refresh = True
             if 'Startup' in msg.topic:
                 ANIMATIONS['rainbow_cycle'](self.strip)
+                refresh = True
             if 'Connected' in msg.topic:
                 ANIMATIONS['color_wipe'](self.strip, color=Color(0,255,64), wait_ms=10)
+                refresh = True
             if 'Upload' in msg.topic or 'FileAdded' in msg.topic:
                 ANIMATIONS['color_wipe'](self.strip, color=Color(0,255,10), wait_ms=10)
+                refresh = True
             if 'PrintStarted' in msg.topic:
-                ANIMATIONS['bounce'](self.strip, color=Color(0,32,255), iterations=2)
+                ANIMATIONS['bounce'](self.strip, color=Color(0,32,255), color2=Color(0,255,32), iterations=2)
+                refresh = True
             if 'PrintFailed' in msg.topic:
-                ANIMATIONS['bounce'](self.strip, color=Color(255,32,32), iterations=5)
+                ANIMATIONS['bounce'](self.strip, color=Color(255,32,32), color2=Color(255,128,128), iterations=5)
+                refresh = True
             if 'PrintDone' in msg.topic:
-                ANIMATIONS['rainbow_cycle']()
+                ANIMATIONS['rainbow_cycle'](self.strip)
+                refresh = True
+        except Exception as e:
+            logger.debug('Error running animation: {0}'.format(e))
         finally:
-            ANIMATIONS['color_wipe'](self.strip)
+            if refresh:
+                ANIMATIONS['color_wipe'](self.strip)
 
 def single_run(strip, animation, *args, **kwargs):
     def parse_arg(arg, value):
@@ -76,7 +95,7 @@ def single_run(strip, animation, *args, **kwargs):
         # TODO Make argument subparser to avoid having this
         if not value:
             return False
-        if arg == 'host' or arg == 'port' or arg == 'animation':
+        if arg in ('host', 'port', 'animation'):
             return False
         return True
 
@@ -84,16 +103,18 @@ def single_run(strip, animation, *args, **kwargs):
         if 'color' in arg and 'wipe' not in arg:
             # convert color RGB values to 24 bit number
             return neopixel.Color(value[0], value[1], value[2])
+        if 'iterations' in arg:
+            return value[0]
         return value
 
     animation_args = {k: check_value(k, v) for (k, v) in vars(args[0]).items() if parse_arg(k, v)}
 
     try:
+        logger.debug('Animation: {0}\nArgs: {1}'.format(animation, animation_args))
         ANIMATIONS[animation](strip, **animation_args)
+        time.sleep(10)
     except Exception as e:
         print(e)
-    finally:
-        sys.exit(0)
 
 
 if __name__ == '__main__':
@@ -109,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--color', metavar='RGB', nargs=3, type=int)
     parser.add_argument('--color2', metavar='RGB', nargs=3, type=int)
     parser.add_argument('--wait-ms', type=int, nargs=1)
-    parser.add_argument('--interval', type=int, nargs=1)
+    parser.add_argument('--iterations', type=int, nargs=1)
 
     args = parser.parse_args()
 
@@ -125,7 +146,7 @@ if __name__ == '__main__':
                                     mqtt_pass=args.password)
             ledcontrol.init_msg_client()
         except Exception as e:
-            print(e)
+            logger.debug(e)
         finally:
             sys.exit(0)
 
@@ -141,5 +162,3 @@ if __name__ == '__main__':
         finally:
             # Ask nicely to stop then take the hammer out to prevent zombies
             os.killpg(0, signal.SIGTERM)
-            time.sleep(1)
-            os.killpg(0, signal.SIGKILL)

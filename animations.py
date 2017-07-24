@@ -1,6 +1,8 @@
 import time
 from neopixel import Color
 
+from led_control import logger
+
 OFF = Color(0, 0, 0)
 WHITE = Color(255, 255, 255)
 
@@ -9,7 +11,6 @@ def color_wipe(strip, color=WHITE, wait_ms=51, *args, **kwargs):
         strip.setPixelColor(i, color)
         time.sleep(wait_ms/1000.0)
         strip.show()
-    strip.show()
 
 def theaterchase(strip, color=WHITE, wait_ms=50, iterations=10, *args, **kwargs):
     """Movie theater light style chaser animation."""
@@ -47,15 +48,16 @@ def wheel(pos, *args, **kwargs):
         pos -= 170
         return Color(0, pos * 3, 255 - pos * 3)
 
-def rainbow(strip, wait_ms=20, iterations=1, *args, **kwargs):
+def rainbow(strip, wait_ms=1, iterations=1, *args, **kwargs):
     """Draw rainbow that fades across all pixels at once."""
+    logger.debug('Rainbow args: {}, {}'.format(wait_ms, iterations))
     for j in range(256*iterations):
         for i in range(strip.numPixels()):
             strip.setPixelColor(i, wheel((i+j) & 255))
             strip.show()
             time.sleep(wait_ms/1000.0)
 
-def rainbow_cycle(strip, wait_ms=20, iterations=5, *args, **kwargs):
+def rainbow_cycle(strip, wait_ms=1, iterations=1, *args, **kwargs):
     """Draw rainbow that uniformly distributes itself across all pixels."""
     for j in range(256*iterations):
         for i in range(strip.numPixels()):
