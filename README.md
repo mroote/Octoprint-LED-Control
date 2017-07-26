@@ -11,6 +11,11 @@ Useful for lighting the build surface and reacting to print events such as heati
 * Adafruits Python Neopixel library: https://github.com/jgarff/rpi_ws281x/tree/master/python
 * Paho MQTT: https://pypi.python.org/pypi/paho-mqtt/1.3.0
 
+#### External Dependencies
+
+* MQTT Broker running, either on the Octopi server or elsewhere.
+* MQTT Plugin installed through OctoPrint and configured to connect to the MQTT broker.
+
 ## Usage
 
 The script can be run with two modes, daemon and single run.  Single run is useful for testing animations while daemon mode will listen to thq MQTT bus and respond to messages.
