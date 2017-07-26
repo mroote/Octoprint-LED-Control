@@ -16,6 +16,14 @@ Useful for lighting the build surface and reacting to print events such as heati
 * MQTT Broker running, either on the Octopi server or elsewhere.
 * MQTT Plugin installed through OctoPrint and configured to connect to the MQTT broker.
 
+## Setup
+
+1. Use git to clone the script, I use the ~/bin directory in the octopi user's home dir.
+2. Change any configuration options in the led_control.py file to reflect your LED strip.
+3. Add systemd service file to /etc/systemd/user/
+4. Enable systemd service with `systemctl enable --user led_control.service`
+5. Start service with `systemctl start led_control.service`
+
 ## Usage
 
 The script can be run with two modes, daemon and single run.  Single run is useful for testing animations while daemon mode will listen to thq MQTT bus and respond to messages.
