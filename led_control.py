@@ -55,7 +55,7 @@ class LEDControl():
 
     def on_message(self, client, userdata, msg):
         refresh = False
-        logger.info('Received: {0}'.format(msg.topic))
+        logger.debug('Received: {0}'.format(msg.topic))
         try:
             if 'PowerOn' in msg.topic:
                 ANIMATIONS['color_wipe'](self.strip, wait_ms=150)
@@ -155,7 +155,7 @@ if __name__ == '__main__':
         try:
             single_run(strip, args.animation, args)
         except Exception as e:
-            print(e)
+            logger.debug(e)
             traceback.print_tb(err.__traceback__)
             er = sys.exc_info()[0]
             write_to_page( "<p>Error: %s</p>" % er )
