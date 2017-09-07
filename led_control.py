@@ -75,7 +75,7 @@ class LEDControl():
                 ANIMATIONS['color_wipe'](self.strip, color=Color(0,255,10), wait_ms=10)
                 refresh = True
             if 'PrintStarted' in msg.topic:
-                ANIMATIONS['bounce'](self.strip, color=Color(0,32,255), color2=Color(0,255,32), iterations=2)
+                ANIMATIONS['bounce'](self.strip, color=Color(255,32,20), color2=Color(0,255,32), iterations=3)
                 refresh = True
             if 'PrintFailed' in msg.topic:
                 ANIMATIONS['bounce'](self.strip, color=Color(255,32,32), color2=Color(255,128,128), iterations=5)
