@@ -19,6 +19,9 @@ class LEDStrip():
     def __init__(self):
         self.strip = neopixel.Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
 
+    def init_strip(self):
+        self.strip.begin()
+
     def color_wipe(self, color=WHITE, wait_ms=51, *args, **kwargs):
         for i in range(self.strip.numPixels()):
             self.strip.setPixelColor(i, color)

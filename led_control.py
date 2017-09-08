@@ -42,6 +42,7 @@ class LEDControl():
         client.subscribe('octoprint/#')
 
         self.strip = LEDStrip()
+        self.strip.init_strip()
 
         self.strip.color_wipe()
 
@@ -53,33 +54,33 @@ class LEDControl():
                 self.strip.color_wipe(wait_ms=100)
                 refresh = True
             if 'PowerOff' in msg.topic:
-                ANIMATIONS['color_wipe'](self.strip, color=Color(0,0,0), wait_ms=10)
+                self.strip.color_wipe(color=Color(0,0,0), wait_ms=10)
             if 'ClientOpened' in msg.topic:
-                ANIMATIONS['color_wipe'](self.strip, color=Color(0,64,255), wait_ms=10)
+                self.strip.color_wipe(color=Color(0,64,255), wait_ms=10)
                 refresh = True
             if 'Startup' in msg.topic:
-                ANIMATIONS['rainbow_cycle'](self.strip)
+                self.strip.rainbow_cycle()
                 refresh = True
             if 'Connected' in msg.topic:
-                ANIMATIONS['color_wipe'](self.strip, color=Color(0,255,64), wait_ms=10)
+                self.strip.color_wipe(color=Color(0,255,64), wait_ms=10)
                 refresh = True
             if 'Upload' in msg.topic or 'FileAdded' in msg.topic:
-                ANIMATIONS['color_wipe'](self.strip, color=Color(0,255,10), wait_ms=10)
+                self.strip.color_wipe(color=Color(0,255,10), wait_ms=10)
                 refresh = True
             if 'PrintStarted' in msg.topic:
-                ANIMATIONS['bounce'](self.strip, color=Color(0,32,255), color2=Color(0,255,32), iterations=2)
+                self.strip.bounce(color=Color(0,32,255), color2=Color(0,255,32), iterations=2)
                 refresh = True
             if 'PrintFailed' in msg.topic:
-                ANIMATIONS['bounce'](self.strip, color=Color(255,32,32), color2=Color(255,128,128), iterations=5)
+                self.strip.bounce(color=Color(255,32,32), color2=Color(255,128,128), iterations=5)
                 refresh = True
             if 'PrintDone' in msg.topic:
-                ANIMATIONS['rainbow_cycle'](self.strip, iterations=10, wait_ms=10)
+                self.strip.rainbow_cycle(iterations=10, wait_ms=10)
                 refresh = True
         except Exception as e:
             logger.debug('Error running animation: {0}'.format(e))
         finally:
             if refresh:
-                ANIMATIONS['color_wipe'](self.strip)
+                self.strip.color_wipe()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
