@@ -91,7 +91,10 @@ if __name__ == '__main__':
     parser.add_argument('--user', help='User for MQTT broker.', default="")
     parser.add_argument('-p', '--password', help='Password for MQTT broker.', default="")
 
-    parser.add_argument('--animation', help='Run a single animation and exit.', type=str)
+    parser.add_argument('--animation',
+                        help='Run a single animation and exit.',
+                        type=str,
+                        choices=[k for k in LEDStrip.__dict__.keys() if k not in ('init_strip', 'single_run') and '__' not in k])
     parser.add_argument('--color', metavar='RGB', nargs=3, type=int)
     parser.add_argument('--color2', metavar='RGB', nargs=3, type=int)
     parser.add_argument('--wait-ms', type=int)
