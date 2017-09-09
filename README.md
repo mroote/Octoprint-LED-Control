@@ -18,7 +18,7 @@ Useful for lighting the build surface and reacting to print events such as heati
 
 ## Setup
 
-1. Use git to clone the script, I use the ~/bin directory in the octopi user's home dir.
+1. Use git to clone the script, I use the ~/.octoprint/scripts directory in the octopi user's home dir.
 2. Change any configuration options in the led_control.py file to reflect your LED strip.
 3. Add systemd service file to /etc/systemd/user/
 4. Enable systemd service with `systemctl enable --user led_control.service`

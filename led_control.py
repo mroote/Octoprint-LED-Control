@@ -91,11 +91,11 @@ if __name__ == '__main__':
     parser.add_argument('--user', help='User for MQTT broker.', default="")
     parser.add_argument('-p', '--password', help='Password for MQTT broker.', default="")
 
-    parser.add_argument('--animation', help='Run a single animation and exit.')
+    parser.add_argument('--animation', help='Run a single animation and exit.', type=str)
     parser.add_argument('--color', metavar='RGB', nargs=3, type=int)
     parser.add_argument('--color2', metavar='RGB', nargs=3, type=int)
-    parser.add_argument('--wait-ms', type=int, nargs=1)
-    parser.add_argument('--iterations', type=int, nargs=1)
+    parser.add_argument('--wait-ms', type=int)
+    parser.add_argument('--iterations', type=int)
 
     args = parser.parse_args()
 
@@ -103,7 +103,8 @@ if __name__ == '__main__':
         try:
             ledcontrol = LEDControl(mqtt_user=args.user,
                                     mqtt_pass=args.password,
-                                    mqtt_host=args.host)
+                                    mqtt_host=args.host,
+                                    mqtt_port=args.port)
             ledcontrol.init_msg_client()
         except Exception as e:
             logger.debug(e)
@@ -112,9 +113,13 @@ if __name__ == '__main__':
 
     if args.animation:
         strip = LEDStrip()
+        strip.init_strip()
         os.setpgrp() # create new process group, become its leader
         try:
-            single_run(strip, args.animation, args)
+            animation = getattr(strip, args.animation)
+            animation_args = {k: v for (k, v) in vars(args).items() if v is not None}
+            logger.debug(animation_args)
+            animation(**animation_args)
         except Exception as e:
             logger.debug(e)
             traceback.print_tb(err.__traceback__)
@@ -123,3 +128,5 @@ if __name__ == '__main__':
         finally:
             # Ask nicely to stop then take the hammer out to prevent zombies
             os.killpg(0, signal.SIGTERM)
+            time.sleep(2)
+            os.killpg(0, signal.SIGKILL)
