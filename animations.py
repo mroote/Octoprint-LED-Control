@@ -1,4 +1,5 @@
 import time
+import math
 import neopixel
 from neopixel import Color
 
@@ -90,6 +91,18 @@ class LEDStrip():
                     time.sleep(wait_ms/1000.0)
                     for i in range(0, self.strip.numPixels(), 3):
                         self.strip.setPixelColor(i+q, 0)
+
+    def breathing(self, color=WHITE, iterations=5, wait_ms=10, *args, **kwargs):
+        old_min, old_max = -1.0, 1.0
+        new_min, new_max = 0, 255
+        for x in range(iterations):
+            [self.strip.setPixelColor(i, color) for i in range(self.strip.numPixels())]
+            for i in range(360):
+                brightness_value = math.sin(math.radians(i))
+                brightness_value = ((brightness_value - old_min) / (old_max - old_min)) * (new_max - new_min)
+                self.strip.setBrightness(int(brightness_value))
+                self.strip.show()
+                time.sleep(wait_ms/1000.0)
 
     def single_run(self, strip, animation, *args, **kwargs):
         def parse_arg(arg, value):

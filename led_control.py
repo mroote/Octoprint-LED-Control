@@ -121,6 +121,9 @@ if __name__ == '__main__':
         try:
             animation = getattr(strip, args.animation)
             animation_args = {k: v for (k, v) in vars(args).items() if v is not None}
+            if 'color' in animation_args:
+                color = animation_args['color']
+                animation_args['color'] = Color(color[0], color[1], color[2])
             logger.debug(animation_args)
             animation(**animation_args)
         except Exception as e:
